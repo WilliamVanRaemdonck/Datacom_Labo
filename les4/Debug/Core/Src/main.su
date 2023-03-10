@@ -1,0 +1,10 @@
+main.c:71:5:_write	32	static
+main.c:100:5:main	16	static
+main.c:157:6:SystemClock_Config	216	static
+main.c:217:13:MX_USART1_UART_Init	8	static
+main.c:252:13:MX_GPIO_Init	48	static
+main.c:309:6:spi_tranceive_bytes	32	static
+main.c:322:6:spi_transmit	32	static
+main.c:359:6:SysTickDelayCount	16	static
+main.c:378:6:HAL_TIM_PeriodElapsedCallback	16	static
+main.c:395:6:Error_Handler	4	static,ignoring_inline_asm
