@@ -311,10 +311,16 @@ void spi_tranceive_bytes(uint8_t trans[2], uint8_t receive[2], uint16_t len){
 	 *
 	 * dit doen voor len aantal keer
 	 *
-	 * transmit en receice tegelijkertijd
+	 * transmit en receive tegelijkertijd
 	 */
 	//vars
 	uint8_t delay1us = 20;
+
+	uint8_t output = 0x00;
+	uint8_t mask = 0x01;
+	uint8_t shift = 0x00;
+
+	uint8_t input = 0x00;
 
 	//init
 	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, 1);
@@ -323,17 +329,45 @@ void spi_tranceive_bytes(uint8_t trans[2], uint8_t receive[2], uint16_t len){
 	SysTickDelayCount(delay1us);
 
 	//clk laag
-
-	//bit TX klaarzetten
-
-	//bit RX inlezen
-
-	//herhalen voor 8 aantal keer
+	HAL_GPIO_WritePin(SPI_SCK_GPIO_Port, SPI_SCK_Pin, 0);
+	SysTickDelayCount(delay1us);
 
 	//herhalen voor len keer
+	//herhalen voor 8 aantal keer
+	for(int bytes = 0; bytes < len; bytes++){
+		shift = trans[bytes];
+		for(int bit = 0; bit < 8; bit++){
+			//bit TX klaarzetten
+			output = shift & mask;
+			if(output == 0x01){
+				HAL_GPIO_WritePin(SPI_MOSI_GPIO_Port, SPI_MOSI_Pin, 1);
+			}
+			else{
+				HAL_GPIO_WritePin(SPI_MOSI_GPIO_Port, SPI_MOSI_Pin, 0);
+			}
+			shift = (shift >> 1);
 
-	//data opslagen in arrays
+			//bit RX inlezen
+			if(HAL_GPIO_ReadPin(SPI_MISO_GPIO_Port, SPI_MISO_Pin)){
+				input &= 0b11111111;
+			}
+			else{
+				input &= 0b11111110;
+			}
+			input = (input << 1);
+
+			//clk Pulse
+			HAL_GPIO_WritePin(SPI_SCK_GPIO_Port, SPI_SCK_Pin, 1);
+			SysTickDelayCount(delay1us);
+			HAL_GPIO_WritePin(SPI_SCK_GPIO_Port, SPI_SCK_Pin, 0);
+			SysTickDelayCount(delay1us);
+		}
+		receive[bytes] = input;
+	}
 }
+
+//data opslagen in arrays
+
 
 //	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, 1);
 //	HAL_GPIO_WritePin(SPI_MOSI_GPIO_Port, SPI_MOSI_Pin, 1);
