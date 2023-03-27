@@ -57,11 +57,12 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void spi_tranceive_bytes(uint8_t[2] , uint8_t[2] , uint16_t);
+void spi_tranceive_bytes(uint8_t[4] , uint8_t[4] , uint16_t);
 void spi_transmit(uint8_t, uint16_t);
 uint8_t spi_receive(uint16_t);
+uint8_t reverse(uint8_t);
 
-void SysTickDelayCount(unsigned long);
+void SysTickDelayCount(uint32_t);
 
 #include <stdio.h>
 
@@ -126,9 +127,10 @@ int main(void)
 	/* USER CODE BEGIN 2 */
 
 	//Commandbyte bit7:0 bit6:R/!W bit5-3:RegisterAdres bit2:continues read bit1-0:0
-	uint8_t trans[2] = {0b01011000, 0};
-	uint8_t receive[2] = {0,0};
-	uint16_t len = 2;
+	//uint8_t trans[4] = {0b01011000, 0x00, 0x00, 0x00};	//continous read
+	uint8_t trans[4] = {0x03, 0x00, 0x00, 0x00};	//continous read
+	uint8_t receive[4] = {0x00,0x00, 0x00, 0x00};
+	uint16_t len = 4;
 
 	/* USER CODE END 2 */
 
@@ -140,6 +142,16 @@ int main(void)
 
 		/* USER CODE BEGIN 3 */
 		spi_tranceive_bytes(trans, receive, len);
+		//HAL_Delay(1000);
+		//test prints
+		printf("-----------------------------------------------\n\r");
+		for(int i = 0; i < len; i++){
+			printf("verzonden %d = %d\n\r", i, trans[i]);
+		}
+		for(int i = 0; i < len; i++){
+			printf("ontvangen %d = %d\n\r", i, receive[i]);
+		}
+
 		HAL_Delay(1000);
 	}
 	/* USER CODE END 3 */
@@ -301,7 +313,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void spi_tranceive_bytes(uint8_t trans[2], uint8_t receive[2], uint16_t len){
+void spi_tranceive_bytes(uint8_t trans[4], uint8_t receive[4], uint16_t len){
 	//logica
 	/* clk laag
 	 * data klaarzette
@@ -314,7 +326,7 @@ void spi_tranceive_bytes(uint8_t trans[2], uint8_t receive[2], uint16_t len){
 	 * transmit en receive tegelijkertijd
 	 */
 	//vars
-	uint8_t delay1us = 20;
+	uint32_t delay1us = 10000; //20
 
 	uint8_t output = 0x00;
 	uint8_t mask = 0x01;
@@ -328,6 +340,10 @@ void spi_tranceive_bytes(uint8_t trans[2], uint8_t receive[2], uint16_t len){
 	HAL_GPIO_WritePin(SPI_SCK_GPIO_Port, SPI_SCK_Pin, 1);
 	SysTickDelayCount(delay1us);
 
+	//cs laag
+	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, 0);
+	SysTickDelayCount(delay1us);
+
 	//clk laag
 	HAL_GPIO_WritePin(SPI_SCK_GPIO_Port, SPI_SCK_Pin, 0);
 	SysTickDelayCount(delay1us);
@@ -335,7 +351,7 @@ void spi_tranceive_bytes(uint8_t trans[2], uint8_t receive[2], uint16_t len){
 	//herhalen voor len keer
 	//herhalen voor 8 aantal keer
 	for(int bytes = 0; bytes < len; bytes++){
-		shift = trans[bytes];
+		shift = reverse(trans[bytes]);
 		for(int bit = 0; bit < 8; bit++){
 			//bit TX klaarzetten
 			output = shift & mask;
@@ -364,6 +380,17 @@ void spi_tranceive_bytes(uint8_t trans[2], uint8_t receive[2], uint16_t len){
 		}
 		receive[bytes] = input;
 	}
+	HAL_GPIO_WritePin(SPI_MOSI_GPIO_Port, SPI_MOSI_Pin, 1);
+	HAL_GPIO_WritePin(SPI_SCK_GPIO_Port, SPI_SCK_Pin, 1);
+	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, 1);
+	SysTickDelayCount(delay1us);
+}
+
+uint8_t reverse(uint8_t b) {
+   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+   return b;
 }
 
 //data opslagen in arrays
@@ -373,7 +400,7 @@ void spi_tranceive_bytes(uint8_t trans[2], uint8_t receive[2], uint16_t len){
 //	HAL_GPIO_WritePin(SPI_MOSI_GPIO_Port, SPI_MOSI_Pin, 1);
 //	HAL_GPIO_WritePin(SPI_SCK_GPIO_Port, SPI_SCK_Pin, 1);
 
-void SysTickDelayCount(unsigned long ulCount){
+void SysTickDelayCount(uint32_t ulCount){
 	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 	DWT->LAR = 0xC5ACCE55;
 	DWT->CYCCNT = 0;
