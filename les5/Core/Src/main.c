@@ -416,17 +416,32 @@ uint8_t I2C_write(uint8_t data){
 //I2C_read zal 1 byte van de I2C bus lezen en al dan niet een ack of een nack terug sturen
 //afhankelijk van het argument dat je meegeeft. (ack is 0, nack is 1)
 uint8_t I2C_read(uint8_t ack){
+	uint8_t input = 0x00;
+
 	for(uint8_t index = 0; index < 8; index++){
+		//clk high
 		HAL_GPIO_WritePin(I2C_SCL_GPIO_Port, I2C_SCL_Pin, 1);
 		SysTickDelayCount(delay1us);
 
-		//read bit and shift
+		//1 on SDA?
+		if(HAL_GPIO_ReadPin(I2C_SDA_GPIO_Port, I2C_SDA_Pin)){
+			//1
+			input |= 0b00000001;
+		}
+		else{
+			//0
+			input &= 0b11111110;
+		}
+		//shift input reg
+		input = (input << 1);
 
+		//clk low
 		HAL_GPIO_WritePin(I2C_SCL_GPIO_Port, I2C_SCL_Pin, 0);
 		SysTickDelayCount(delay1us);
 
+		//ack?
 	}
-	return 0x00;
+	return input;
 }
 
 //I2C_readMem zal eerst de slave adreseren dan het register adres op de bus schrijven en na een repeated start
@@ -439,8 +454,10 @@ uint8_t I2C_readMem(uint8_t slaveAdres, uint8_t memAdres, uint8_t * buffer, uint
 
 	ack = I2C_write(slaveAdres);
 	SysTickDelayCount(delay1us);
+
 	ack = I2C_write(memAdres);
 	SysTickDelayCount(delay1us);
+
 	ack = I2C_write(slaveAdres+1);
 	SysTickDelayCount(delay1us);
 
