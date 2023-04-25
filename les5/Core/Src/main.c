@@ -168,6 +168,8 @@ int main(void)
 
 		printf("%d\n\r", input);
 
+		HAL_Delay(1);
+
 	}
 	/* USER CODE END 3 */
 }
@@ -414,6 +416,16 @@ uint8_t I2C_write(uint8_t data){
 //I2C_read zal 1 byte van de I2C bus lezen en al dan niet een ack of een nack terug sturen
 //afhankelijk van het argument dat je meegeeft. (ack is 0, nack is 1)
 uint8_t I2C_read(uint8_t ack){
+	for(uint8_t index = 0; index < 8; index++){
+		HAL_GPIO_WritePin(I2C_SCL_GPIO_Port, I2C_SCL_Pin, 1);
+		SysTickDelayCount(delay1us);
+
+		//read bit and shift
+
+		HAL_GPIO_WritePin(I2C_SCL_GPIO_Port, I2C_SCL_Pin, 0);
+		SysTickDelayCount(delay1us);
+
+	}
 	return 0x00;
 }
 
@@ -423,13 +435,18 @@ uint8_t I2C_readMem(uint8_t slaveAdres, uint8_t memAdres, uint8_t * buffer, uint
 	uint8_t input = 0x00;
 	uint8_t ack = 0x00;
 
+	I2C_start();
+
 	ack = I2C_write(slaveAdres);
-
-	//ack = I2C_write(memAdres);
-
-	//ack = I2C_write(slaveAdres+1);
+	SysTickDelayCount(delay1us);
+	ack = I2C_write(memAdres);
+	SysTickDelayCount(delay1us);
+	ack = I2C_write(slaveAdres+1);
+	SysTickDelayCount(delay1us);
 
 	input = I2C_read(0x00);
+
+	I2C_stop();
 
 	return input;
 }
