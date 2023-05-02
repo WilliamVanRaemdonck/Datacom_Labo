@@ -146,11 +146,13 @@ int main(void)
 	/* USER CODE BEGIN 2 */
 
 	uint8_t	slaveAdres = 0b00111010;
-	uint8_t	memAdres = 0x0D;
+	uint8_t	whoAmI = 0x0D;
+	uint8_t OUT_X_MSB = 0x01;
 	uint8_t	byteCount = 4;
 	uint8_t *buffer;
 
 	uint8_t input = 0x00;
+	uint16_t speed = 0x0000;
 
 	initI2C();
 
@@ -164,11 +166,45 @@ int main(void)
 
 		/* USER CODE BEGIN 3 */
 
-		input = I2C_readMem(slaveAdres, memAdres, buffer, byteCount);
+		input = I2C_readMem(slaveAdres, whoAmI, buffer, byteCount);
 
-		printf("%d\n\r", input);
+		//printf("%d\n\r", input);
 
 		HAL_Delay(1);
+
+		speed = 0x0000;
+		input = I2C_readMem(slaveAdres, 0x01, buffer, byteCount);
+		speed = input;
+		speed = (speed << 2);
+		input = I2C_readMem(slaveAdres, 0x02, buffer, byteCount);
+		input &= 0b11000000;
+		input = (input >> 6);
+		speed |= input;
+		printf("X = %d\n\r", speed);
+
+		speed = 0x0000;
+		input = I2C_readMem(slaveAdres, 0x03, buffer, byteCount);
+		speed = input;
+		speed = (speed << 2);
+		input = I2C_readMem(slaveAdres, 0x04, buffer, byteCount);
+		input &= 0b11000000;
+		input = (input >> 6);
+		speed |= input;
+		printf("Y = %d\n\r", speed);
+
+		speed = 0x0000;
+		input = I2C_readMem(slaveAdres, 0x05, buffer, byteCount);
+		speed = input;
+		speed = (speed << 2);
+		input = I2C_readMem(slaveAdres, 0x06, buffer, byteCount);
+		input &= 0b11000000;
+		input = (input >> 6);
+		speed |= input;
+		printf("Z = %d\n\n\r", speed);
+
+		printf("----------------------------------------\n\r");
+
+		HAL_Delay(250);
 
 	}
 	/* USER CODE END 3 */
@@ -358,6 +394,9 @@ void initI2C(void){
 //I2C_start zal de start conditie op de bus plaatsen en kan ook gebruikt worden voor een "repeated start".
 //Een start bit is als men de data lijn laag maakt als de kloklijn hoog is.
 void I2C_start(void){
+	HAL_GPIO_WritePin(I2C_SCL_GPIO_Port, I2C_SCL_Pin, 1);
+	HAL_GPIO_WritePin(I2C_SDA_GPIO_Port, I2C_SDA_Pin, 1);
+
 	HAL_GPIO_WritePin(I2C_SDA_GPIO_Port, I2C_SDA_Pin, 0);
 	SysTickDelayCount(delay1us);
 	HAL_GPIO_WritePin(I2C_SCL_GPIO_Port, I2C_SCL_Pin, 0);
@@ -367,6 +406,10 @@ void I2C_start(void){
 //I2C_stop zal de stop conditie op de bus plaatsen.
 //Een stop bit is als men de data lijn hoog maakt als de kloklijn hoog is.
 void I2C_stop(void){
+	HAL_GPIO_WritePin(I2C_SDA_GPIO_Port, I2C_SDA_Pin, 0);
+	HAL_GPIO_WritePin(I2C_SCL_GPIO_Port, I2C_SCL_Pin, 0);
+
+
 	HAL_GPIO_WritePin(I2C_SCL_GPIO_Port, I2C_SCL_Pin, 1);
 	SysTickDelayCount(delay1us);
 	HAL_GPIO_WritePin(I2C_SDA_GPIO_Port, I2C_SDA_Pin, 1);
@@ -439,7 +482,7 @@ uint8_t I2C_read(uint8_t ack){
 		HAL_GPIO_WritePin(I2C_SCL_GPIO_Port, I2C_SCL_Pin, 0);
 		SysTickDelayCount(delay1us);
 
-		//ack?
+		//ack?d
 	}
 	return input;
 }
@@ -457,6 +500,8 @@ uint8_t I2C_readMem(uint8_t slaveAdres, uint8_t memAdres, uint8_t * buffer, uint
 
 	ack = I2C_write(memAdres);
 	SysTickDelayCount(delay1us);
+
+	I2C_start();	//repeated start condition
 
 	ack = I2C_write(slaveAdres+1);
 	SysTickDelayCount(delay1us);
