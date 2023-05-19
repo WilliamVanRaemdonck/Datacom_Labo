@@ -1,0 +1,6 @@
+fsm.c:35:6:initial_state	24	static
+fsm.c:52:6:idle_state	16	static
+fsm.c:58:6:reception_state	24	static
+fsm.c:67:6:control_and_wait_state	24	static
+fsm.c:77:6:emission_state	24	static
+fsm.c:91:5:main	112	static

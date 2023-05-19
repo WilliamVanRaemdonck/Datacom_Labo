@@ -146,13 +146,22 @@ int main(void)
 	/* USER CODE BEGIN 2 */
 
 	uint8_t	slaveAdres = 0b00111010;
+
 	uint8_t	whoAmI = 0x0D;
 	uint8_t OUT_X_MSB = 0x01;
+	uint8_t OUT_X_LSB = 0x02;
+	uint8_t OUT_Y_MSB = 0x03;
+	uint8_t OUT_Y_LSB = 0x04;
+	uint8_t OUT_Z_MSB = 0x05;
+	uint8_t OUT_Z_LSB = 0x06;
+
 	uint8_t	byteCount = 4;
 	uint8_t *buffer;
 
 	uint8_t input = 0x00;
-	uint16_t speed = 0x0000;
+	uint16_t accelX = 0x0000;
+	uint16_t accelY = 0x0000;
+	uint16_t accelZ = 0x0000;
 
 	initI2C();
 
@@ -166,45 +175,42 @@ int main(void)
 
 		/* USER CODE BEGIN 3 */
 
-		input = I2C_readMem(slaveAdres, whoAmI, buffer, byteCount);
+		//input = I2C_readMem(slaveAdres, whoAmI, buffer, byteCount);
 
 		//printf("%d\n\r", input);
 
-		HAL_Delay(1);
+		//HAL_Delay(1);
 
-		speed = 0x0000;
-		input = I2C_readMem(slaveAdres, 0x01, buffer, byteCount);
-		speed = input;
-		speed = (speed << 2);
-		input = I2C_readMem(slaveAdres, 0x02, buffer, byteCount);
+		input = I2C_readMem(slaveAdres, OUT_X_MSB, buffer, byteCount);
+		accelX = input;
+		accelX = (accelX << 2);
+		input = I2C_readMem(slaveAdres, OUT_X_LSB, buffer, byteCount);
 		input &= 0b11000000;
 		input = (input >> 6);
-		speed |= input;
-		printf("X = %d\n\r", speed);
+		accelX |= input;
+		printf("X = %d\n\r", accelX);
 
-		speed = 0x0000;
-		input = I2C_readMem(slaveAdres, 0x03, buffer, byteCount);
-		speed = input;
-		speed = (speed << 2);
-		input = I2C_readMem(slaveAdres, 0x04, buffer, byteCount);
+		input = I2C_readMem(slaveAdres, OUT_Y_MSB, buffer, byteCount);
+		accelY = input;
+		accelY = (accelY << 2);
+		input = I2C_readMem(slaveAdres, OUT_Y_LSB, buffer, byteCount);
 		input &= 0b11000000;
 		input = (input >> 6);
-		speed |= input;
-		printf("Y = %d\n\r", speed);
+		accelY |= input;
+		printf("Y = %d\n\r", accelY);
 
-		speed = 0x0000;
-		input = I2C_readMem(slaveAdres, 0x05, buffer, byteCount);
-		speed = input;
-		speed = (speed << 2);
-		input = I2C_readMem(slaveAdres, 0x06, buffer, byteCount);
+		input = I2C_readMem(slaveAdres, OUT_Z_MSB, buffer, byteCount);
+		accelZ = input;
+		accelZ = (accelZ << 2);
+		input = I2C_readMem(slaveAdres, OUT_Z_LSB, buffer, byteCount);
 		input &= 0b11000000;
 		input = (input >> 6);
-		speed |= input;
-		printf("Z = %d\n\n\r", speed);
+		accelZ |= input;
+		printf("Z = %d\n\n\r", accelZ);
 
 		printf("----------------------------------------\n\r");
 
-		HAL_Delay(250);
+		HAL_Delay(1);
 
 	}
 	/* USER CODE END 3 */
